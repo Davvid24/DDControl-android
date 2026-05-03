@@ -27,6 +27,9 @@ interface ApiService {
     @GET("api/incidencias/usuario/{idUsuario}")
     suspend fun getIncidenciasByUsuario(@Path("idUsuario") idUsuario: Int): Response<List<IncidenciaResponse>>
 
+    @POST("api/incidencias")
+    suspend fun createIncidencia(@Body request: IncidenciaRequest): Response<IncidenciaResponse>
+
     @GET("api/empleado-sede/usuario/{idUsuario}")
     suspend fun getSedesByUsuario(@Path("idUsuario") idUsuario: Int): Response<List<Any>>
 

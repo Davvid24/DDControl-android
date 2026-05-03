@@ -9,3 +9,10 @@ data class IncidenciaResponse(
     val fecha: String?,
     val resuelta: Boolean
 )
+
+data class IncidenciaRequest(
+    val idUsuario: Int,
+    val tipo: String,
+    val descripcion: String?,
+    val idFichaje: Int? = null
+)
