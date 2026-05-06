@@ -9,3 +9,10 @@ data class SedeResponse(
     val radioMetros: Int,
     val activa: Boolean
 )
+data class EmpleadoSedeResponse(
+    val idUsuario: Int,
+    val nombreUsuario: String?,
+    val idSede: Int,
+    val nombreSede: String?,
+    val fechaAsignacion: String?
+)

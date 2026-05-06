@@ -8,28 +8,33 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
+    @Volatile
     private var token: String? = null
 
-    fun setToken(t: String?) { token = t }
-
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+    fun setToken(t: String?) {
+        token = t
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .addInterceptor { chain ->
-            val original = chain.request()
-            val request = if (token != null) {
-                original.newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-            } else original
-            chain.proceed(request)
-        }
-        .build()
-
     val instance: ApiService by lazy {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .addInterceptor { chain ->
+                val currentToken = token
+                val request = if (currentToken != null) {
+                    chain.request().newBuilder()
+                        .header("Authorization", "Bearer $currentToken")
+                        .build()
+                } else {
+                    chain.request()
+                }
+                chain.proceed(request)
+            }
+            .build()
+
         Retrofit.Builder()
             .baseUrl(Constants.BASE_URL)
             .client(okHttpClient)

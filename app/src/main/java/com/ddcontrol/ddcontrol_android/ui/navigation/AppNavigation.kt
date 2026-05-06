@@ -93,7 +93,7 @@ fun HomeScaffold(session: SessionManager, onLogout: () -> Unit) {
             modifier         = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Dashboard.route)   { DashboardScreen(session, onLogout) }
-            composable(Screen.Fichajes.route)    { FichajesScreen(session) }
+            composable(Screen.Fichajes.route) { FichajesScreen(session) }
             composable(Screen.Solicitudes.route) { SolicitudesScreen(session) }
             composable(Screen.Incidencias.route) { IncidenciasScreen(session) }
         }
