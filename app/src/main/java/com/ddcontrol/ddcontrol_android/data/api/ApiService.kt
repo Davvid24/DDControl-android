@@ -41,4 +41,9 @@ interface ApiService {
         @Query("year") year: Int,
         @Query("month") month: Int
     ): Response<CalendarioResponse>
+    @PATCH("api/usuarios/{id}/fcm-token")
+    suspend fun actualizarFcmToken(
+        @Path("id") id: Int,
+        @Body body: Map<String, String>
+    ): Response<Void>
 }

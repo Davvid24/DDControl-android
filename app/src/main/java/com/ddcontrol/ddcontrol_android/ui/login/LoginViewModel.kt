@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.ddcontrol.ddcontrol_android.data.api.RetrofitClient
 import com.ddcontrol.ddcontrol_android.data.repository.AuthRepository
 import com.ddcontrol.ddcontrol_android.data.repository.Result
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -37,6 +39,18 @@ class LoginViewModel : ViewModel() {
             when (val result = repo.login(email, password)) {
                 is Result.Success -> {
                     RetrofitClient.setToken(result.data.token)
+
+                    FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                RetrofitClient.instance.actualizarFcmToken(
+                                    result.data.idUsuario,
+                                    mapOf("fcmToken" to fcmToken)
+                                )
+                            } catch (_: Exception) {}
+                        }
+                    }
+
                     _state.value = LoginState(
                         success   = true,
                         token     = result.data.token,
