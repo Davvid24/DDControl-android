@@ -31,8 +31,14 @@ interface ApiService {
     suspend fun createIncidencia(@Body request: IncidenciaRequest): Response<IncidenciaResponse>
 
     @GET("api/empleado-sede/usuario/{idUsuario}")
-    suspend fun getSedesByUsuario(@Path("idUsuario") idUsuario: Int): Response<List<Any>>
-
+    suspend fun getSedesByUsuario(@Path("idUsuario") idUsuario: Int): Response<List<EmpleadoSedeResponse>>
     @GET("api/sedes/empresa/{idEmpresa}")
     suspend fun getSedesByEmpresa(@Path("idEmpresa") idEmpresa: Int): Response<List<SedeResponse>>
+
+    @GET("api/calendario/{idUsuario}")
+    suspend fun getCalendario(
+        @Path("idUsuario") idUsuario: Int,
+        @Query("year") year: Int,
+        @Query("month") month: Int
+    ): Response<CalendarioResponse>
 }

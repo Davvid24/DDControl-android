@@ -36,6 +36,9 @@ class IncidenciasViewModel : ViewModel() {
         }
     }
 
+    fun limpiarMensaje() {
+        _state.value = _state.value.copy(mensajeExito = null, error = null)
+    }
     fun crear(userId: Int, tipo: String, descripcion: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(creando = true, error = null, mensajeExito = null)
