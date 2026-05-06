@@ -43,31 +43,18 @@ class FichajesViewModel(private val appContext: Context) : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(loadingLista = true, error = null)
 
-            try {
-                val usuarioResp = api.getUsuario(userId)
-                if (usuarioResp.isSuccessful) {
-                    val u = usuarioResp.body()
-                    _state.value = _state.value.copy(
-                        turnoNombre = u?.nombreTurno,
-                        turnoHoraEntrada = null,
-                        turnoHoraSalida = null
-                    )
-                }
-            } catch (_: Exception) {}
-
             val hoy = LocalDate.now()
-            val year = hoy.year
-            val month = hoy.monthValue
 
             try {
-                val calResp = api.getCalendario(userId, year, month)
+                val calResp = api.getCalendario(userId, hoy.year, hoy.monthValue)
                 if (calResp.isSuccessful && calResp.body() != null) {
                     val body = calResp.body()!!
                     val diaHoy = body.dias.find { it.fecha == hoy.toString() }
                     _state.value = _state.value.copy(
+                        turnoNombre      = body.turno?.nombre,
                         turnoHoraEntrada = body.turno?.horaEntrada,
-                        turnoHoraSalida = body.turno?.horaSalida,
-                        esDiaTurno = diaHoy?.esDiaTurno ?: false
+                        turnoHoraSalida  = body.turno?.horaSalida,
+                        esDiaTurno       = diaHoy?.esDiaTurno ?: false
                     )
                 }
             } catch (_: Exception) {}
@@ -76,7 +63,7 @@ class FichajesViewModel(private val appContext: Context) : ViewModel() {
                 is Result.Success -> {
                     val sede = sedeResp.data.firstOrNull()
                     _state.value = _state.value.copy(
-                        idSedeEmpleado = sede?.idSede,
+                        idSedeEmpleado    = sede?.idSede,
                         nombreSedeEmpleado = sede?.nombreSede
                     )
                 }
@@ -99,18 +86,15 @@ class FichajesViewModel(private val appContext: Context) : ViewModel() {
                     val puedePonerPausa = ultimo?.tipo == "entrada" || ultimo?.tipo == "pausa_fin"
 
                     _state.value = _state.value.copy(
-                        fichajesHoy = hoyList,
-                        loadingLista = false,
-                        siguienteTipo = siguienteTipo,
-                        enPausa = enPausa,
-                        puedePonerPausa = puedePonerPausa
+                        fichajesHoy      = hoyList,
+                        loadingLista     = false,
+                        siguienteTipo    = siguienteTipo,
+                        enPausa          = enPausa,
+                        puedePonerPausa  = puedePonerPausa
                     )
                 }
                 is Result.Error -> {
-                    _state.value = _state.value.copy(
-                        loadingLista = false,
-                        error = r.message
-                    )
+                    _state.value = _state.value.copy(loadingLista = false, error = r.message)
                 }
             }
         }
