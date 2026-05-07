@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,132 +67,134 @@ fun DashboardScreen(
             )
         }
     ) { padding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.loading,
+            onRefresh = {
+                vm.load(session.getUserId(), session.getEmpresaId())
+                vm.loadCalendario(session.getUserId(), mesActual.year, mesActual.monthValue)
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .background(Surface)
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            DashCard {
-                Column {
-                    Text("Hola,", color = TextMuted, fontSize = 14.sp)
-                    Text(
-                        session.getNombre() ?: "—",
-                        color = Navy,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        state.nombreTurno ?: "Sin turno asignado",
-                        color = Primary,
-                        fontSize = 13.sp
-                    )
-                }
-            }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Surface)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Mi horario", color = Navy, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Row {
-                            TextButton(onClick = { vistaCalendario = true }) {
-                                Text(
-                                    "Mes",
-                                    color = if (vistaCalendario) Primary else TextMuted,
-                                    fontWeight = if (vistaCalendario) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                            TextButton(onClick = { vistaCalendario = false }) {
-                                Text(
-                                    "Semana",
-                                    color = if (!vistaCalendario) Primary else TextMuted,
-                                    fontWeight = if (!vistaCalendario) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { mesActual = mesActual.minusMonths(1) }) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Navy)
-                        }
+                DashCard {
+                    Column {
+                        Text("Hola,", color = TextMuted, fontSize = 14.sp)
                         Text(
-                            mesActual.month.getDisplayName(TextStyle.FULL, Locale("es"))
-                                .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
+                            session.getNombre() ?: "—",
                             color = Navy,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        IconButton(onClick = { mesActual = mesActual.plusMonths(1) }) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Navy)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            state.nombreTurno ?: "Sin turno asignado",
+                            color = Primary,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Mi horario", color = Navy, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            Row {
+                                TextButton(onClick = { vistaCalendario = true }) {
+                                    Text(
+                                        "Mes",
+                                        color = if (vistaCalendario) Primary else TextMuted,
+                                        fontWeight = if (vistaCalendario) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                                TextButton(onClick = { vistaCalendario = false }) {
+                                    Text(
+                                        "Semana",
+                                        color = if (!vistaCalendario) Primary else TextMuted,
+                                        fontWeight = if (!vistaCalendario) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { mesActual = mesActual.minusMonths(1) }) {
+                                Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Navy)
+                            }
+                            Text(
+                                mesActual.month.getDisplayName(TextStyle.FULL, Locale("es"))
+                                    .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
+                                color = Navy,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            IconButton(onClick = { mesActual = mesActual.plusMonths(1) }) {
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Navy)
+                            }
+                        }
+
+                        if (state.loadingCalendario) {
+                            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        } else if (vistaCalendario) {
+                            CalendarioMensual(state.diasCalendario, mesActual)
+                        } else {
+                            CalendarioSemanal(state.diasCalendario, state.turnoHoraEntrada, state.turnoHoraSalida)
+                        }
+
+                        if (state.turnoHoraEntrada != null) {
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(color = Surface)
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                LeyendaItem(GreenBg, Green, "Fichado")
+                                LeyendaItem(Color(0xFFFFF3E0), Color(0xFFE65100), "Pendiente")
+                                LeyendaItem(Surface, TextLabel, "No laboral")
+                            }
                         }
                     }
+                }
 
-                    if (state.loadingCalendario) {
-                        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    } else if (vistaCalendario) {
-                        CalendarioMensual(state.diasCalendario, mesActual)
-                    } else {
-                        CalendarioSemanal(state.diasCalendario, state.turnoHoraEntrada, state.turnoHoraSalida)
-                    }
-
-                    if (state.turnoHoraEntrada != null) {
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = Surface)
+                DashCard {
+                    Column {
+                        Text("ESTADO ACTUAL", color = TextLabel, fontSize = 11.sp, letterSpacing = 0.08.sp)
                         Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            LeyendaItem(GreenBg, Green, "Fichado")
-                            LeyendaItem(Color(0xFFFFF3E0), Color(0xFFE65100), "Pendiente")
-                            LeyendaItem(Surface, TextLabel, "No laboral")
+                        Text(state.estadoFichaje, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        if (state.ultimoFichaje != null) {
+                            Text(state.ultimoFichaje!!, color = TextMuted, fontSize = 13.sp)
                         }
                     }
                 }
-            }
 
-            DashCard {
-                Column {
-                    Text("ESTADO ACTUAL", color = TextLabel, fontSize = 11.sp, letterSpacing = 0.08.sp)
-                    Spacer(Modifier.height(8.dp))
-                    Text(state.estadoFichaje, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    if (state.ultimoFichaje != null) {
-                        Text(state.ultimoFichaje!!, color = TextMuted, fontSize = 13.sp)
-                    }
-                }
-            }
-
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(Modifier.weight(1f), state.fichajesHoy.toString(), "Fichajes hoy", Primary)
-                StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), "Solicitudes", Yellow)
-                StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(), "Incidencias", Red)
-            }
-
-
-
-            if (state.loading) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(Modifier.weight(1f), state.fichajesHoy.toString(), "Fichajes hoy", Primary)
+                    StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), "Solicitudes", Yellow)
+                    StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(), "Incidencias", Red)
                 }
             }
         }

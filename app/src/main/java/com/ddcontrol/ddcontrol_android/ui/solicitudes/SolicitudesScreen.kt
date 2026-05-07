@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,52 +46,58 @@ fun SolicitudesScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Surface)
+    PullToRefreshBox(
+        isRefreshing = state.loading,
+        onRefresh = { vm.cargar(session.getUserId()) },
+        modifier = Modifier.fillMaxSize()
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(0.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(4.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Surface)
         ) {
-            Box(Modifier.padding(16.dp)) {
-                Button(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                ) {
-                    Text("+ Nueva solicitud", fontWeight = FontWeight.Bold)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(0.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.padding(16.dp)) {
+                    Button(
+                        onClick = { showDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text("+ Nueva solicitud", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
-        }
 
-        Text(
-            "MIS SOLICITUDES",
-            color = TextLabel,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
+            Text(
+                "MIS SOLICITUDES",
+                color = TextLabel,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp)
+            )
 
-        if (state.loading) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            if (state.solicitudes.isEmpty() && !state.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No tienes solicitudes registradas", color = TextMuted, fontSize = 15.sp)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(state.solicitudes) { s -> SolicitudItem(s) }
+                }
             }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(state.solicitudes) { s -> SolicitudItem(s) }
-            }
-        }
 
-        if (state.error != null) {
-            Text(state.error!!, color = Red, modifier = Modifier.padding(16.dp))
+            if (state.error != null) {
+                Text(state.error!!, color = Red, modifier = Modifier.padding(16.dp))
+            }
         }
     }
 }
@@ -149,9 +158,7 @@ fun NuevaSolicitudDialog(
                         val fecha = Instant.ofEpochMilli(millis)
                             .atZone(ZoneId.of("UTC")).toLocalDate()
                         fechaInicio = fecha
-                        if (fechaFin != null && fechaFin!!.isBefore(fecha)) {
-                            fechaFin = null
-                        }
+                        if (fechaFin != null && fechaFin!!.isBefore(fecha)) fechaFin = null
                     }
                     showPickerInicio = false
                 }) { Text("Aceptar") }
@@ -159,9 +166,7 @@ fun NuevaSolicitudDialog(
             dismissButton = {
                 TextButton(onClick = { showPickerInicio = false }) { Text("Cancelar") }
             }
-        ) {
-            DatePicker(state = pickerStateInicio)
-        }
+        ) { DatePicker(state = pickerStateInicio) }
     }
 
     if (showPickerFin) {
@@ -180,9 +185,7 @@ fun NuevaSolicitudDialog(
             dismissButton = {
                 TextButton(onClick = { showPickerFin = false }) { Text("Cancelar") }
             }
-        ) {
-            DatePicker(state = pickerStateFin)
-        }
+        ) { DatePicker(state = pickerStateFin) }
     }
 
     AlertDialog(
@@ -191,10 +194,7 @@ fun NuevaSolicitudDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
                         value = tipoSeleccionado,
                         onValueChange = {},
@@ -203,10 +203,7 @@ fun NuevaSolicitudDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         tipos.forEach { tipo ->
                             DropdownMenuItem(
                                 text = { Text(tipo) },
@@ -223,8 +220,12 @@ fun NuevaSolicitudDialog(
                     label = { Text("Fecha inicio") },
                     placeholder = { Text("Selecciona fecha") },
                     trailingIcon = {
-                        TextButton(onClick = { showPickerInicio = true }) {
-                            Text("📅", fontSize = 18.sp)
+                        IconButton(onClick = { showPickerInicio = true }) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Seleccionar fecha inicio",
+                                tint = Primary
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -237,14 +238,15 @@ fun NuevaSolicitudDialog(
                     label = { Text("Fecha fin") },
                     placeholder = { Text("Selecciona fecha") },
                     trailingIcon = {
-                        TextButton(onClick = {
-                            if (fechaInicio == null) {
-                                errorMsg = "Selecciona primero la fecha de inicio"
-                            } else {
-                                showPickerFin = true
-                            }
+                        IconButton(onClick = {
+                            if (fechaInicio == null) errorMsg = "Selecciona primero la fecha de inicio"
+                            else showPickerFin = true
                         }) {
-                            Text("📅", fontSize = 18.sp)
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Seleccionar fecha fin",
+                                tint = if (fechaInicio == null) TextLabel else Primary
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -271,17 +273,10 @@ fun NuevaSolicitudDialog(
                     fechaFin!!.isBefore(fechaInicio) -> errorMsg = "La fecha de fin no puede ser anterior a la de inicio"
                     else -> {
                         errorMsg = null
-                        onConfirm(
-                            tipoSeleccionado,
-                            fechaInicio!!.format(fmt),
-                            fechaFin!!.format(fmt),
-                            motivo
-                        )
+                        onConfirm(tipoSeleccionado, fechaInicio!!.format(fmt), fechaFin!!.format(fmt), motivo)
                     }
                 }
-            }) {
-                Text("Enviar")
-            }
+            }) { Text("Enviar") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
@@ -295,9 +290,7 @@ fun SolicitudItem(s: SolicitudResponse) {
 
     fun formatFecha(iso: String?): String {
         if (iso == null) return "—"
-        return try {
-            LocalDate.parse(iso).format(fmtDisplay)
-        } catch (_: Exception) { iso }
+        return try { LocalDate.parse(iso).format(fmtDisplay) } catch (_: Exception) { iso }
     }
 
     val (badgeColor, textColor) = when (s.estado.lowercase()) {
