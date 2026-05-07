@@ -46,4 +46,15 @@ interface ApiService {
         @Path("id") id: Int,
         @Body body: Map<String, String>
     ): Response<Void>
+
+    @POST("devices/register/{userId}")
+    suspend fun registerDevice(
+        @Path("userId") userId: Int,
+        @Body body: Map<String, String>
+    )
+
+    @HTTP(method = "DELETE", path = "devices", hasBody = true)
+    suspend fun removeDevice(
+        @Body body: Map<String, String>
+    )
 }

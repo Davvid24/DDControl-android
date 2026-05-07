@@ -115,7 +115,7 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        vm.login(email, password)
+                        vm.login(email.trim().replace("\n", ""), password.trim())
                     }
                 ),
                 colors = OutlinedTextFieldDefaults.colors(

@@ -13,12 +13,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import com.ddcontrol.ddcontrol_android.data.api.RetrofitClient
 import com.ddcontrol.ddcontrol_android.ui.dashboard.DashboardScreen
 import com.ddcontrol.ddcontrol_android.ui.fichajes.FichajesScreen
 import com.ddcontrol.ddcontrol_android.ui.incidencias.IncidenciasScreen
 import com.ddcontrol.ddcontrol_android.ui.login.LoginScreen
 import com.ddcontrol.ddcontrol_android.ui.solicitudes.SolicitudesScreen
 import com.ddcontrol.ddcontrol_android.util.SessionManager
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Dashboard   : Screen("dashboard",   "Inicio",      Icons.Default.Home)
@@ -52,7 +57,26 @@ fun AppNavigation(session: SessionManager) {
         }
         composable("home") {
             HomeScaffold(session = session, onLogout = {
+
+                val userId = session.getUserId()
+                val jwt = session.getToken()
+
+                if (userId != -1 && jwt != null) {
+                    RetrofitClient.setToken(jwt)
+
+                    FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                RetrofitClient.instance.removeDevice(
+                                    mapOf("fcmToken" to fcmToken)
+                                )
+                            } catch (_: Exception) {}
+                        }
+                    }
+                }
+
                 session.clearSession()
+
                 navController.navigate("login") {
                     popUpTo("home") { inclusive = true }
                 }
