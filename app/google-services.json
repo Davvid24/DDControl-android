@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "444487001559",
+    "project_id": "ddcontrol",
+    "storage_bucket": "ddcontrol.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444487001559:android:7dde8cd7460f9da2905792",
+        "android_client_info": {
+          "package_name": "com.ddcontrol.ddcontrol_android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAx7J6O4uPVF6_ksRbGc-iu1tnHaYS9bNY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
