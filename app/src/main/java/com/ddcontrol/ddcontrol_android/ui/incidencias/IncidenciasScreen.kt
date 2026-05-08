@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.IncidenciaResponse
 import com.ddcontrol.ddcontrol_android.ui.theme.*
+import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import com.ddcontrol.ddcontrol_android.util.SessionManager
 import kotlinx.coroutines.delay
 
@@ -28,6 +30,9 @@ fun IncidenciasScreen(
     vm: IncidenciasViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
+    val lang  by LanguageManager.lang.collectAsState()
+    fun t(key: String) = LanguageManager.t(key)
+
     var showDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.cargar(session.getUserId()) }
@@ -50,52 +55,51 @@ fun IncidenciasScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Surface)
+    PullToRefreshBox(
+        isRefreshing = state.loading,
+        onRefresh    = { vm.cargar(session.getUserId()) },
+        modifier     = Modifier.fillMaxSize()
     ) {
-        Card(
-            modifier  = Modifier.fillMaxWidth(),
-            shape     = RoundedCornerShape(0.dp),
-            colors    = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Box(Modifier.padding(16.dp)) {
-                Button(
-                    onClick  = { showDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape    = RoundedCornerShape(10.dp),
-                    colors   = ButtonDefaults.buttonColors(containerColor = Primary)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Nueva incidencia", fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.fillMaxSize().background(Surface)) {
+
+            Card(
+                modifier  = Modifier.fillMaxWidth(),
+                shape     = RoundedCornerShape(0.dp),
+                colors    = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.padding(16.dp)) {
+                    Button(
+                        onClick  = { showDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(t("incidencias.nueva"), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
-        }
 
-        Text(
-            "MIS INCIDENCIAS",
-            color    = TextLabel,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(16.dp)
-        )
+            Text(
+                t("incidencias.titulo"),
+                color    = TextLabel,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(16.dp)
+            )
 
-        if (state.loading) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (state.incidencias.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No tienes incidencias registradas", color = TextMuted, fontSize = 15.sp)
-            }
-        } else {
-            LazyColumn(
-                contentPadding      = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(state.incidencias) { i -> IncidenciaItem(i) }
+            if (state.incidencias.isEmpty() && !state.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(t("incidencias.sin_datos"), color = TextMuted, fontSize = 15.sp)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding      = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(state.incidencias) { i -> IncidenciaItem(i) }
+                }
             }
         }
     }
@@ -110,6 +114,9 @@ fun NuevaIncidenciaDialog(
     onDismiss:    () -> Unit,
     onEnviar:     (tipo: String, descripcion: String) -> Unit
 ) {
+    val lang by LanguageManager.lang.collectAsState()
+    fun t(key: String) = LanguageManager.t(key)
+
     val tipos = listOf("GPS", "retraso", "olvido", "otro")
     var tipoSeleccionado by remember { mutableStateOf(tipos[0]) }
     var descripcion      by remember { mutableStateOf("") }
@@ -117,25 +124,20 @@ fun NuevaIncidenciaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title  = { Text("Nueva incidencia", fontWeight = FontWeight.Bold) },
+        title  = { Text(t("incidencias.nueva_titulo"), fontWeight = FontWeight.Bold) },
         text   = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ExposedDropdownMenuBox(
-                    expanded         = expandido,
-                    onExpandedChange = { expandido = !expandido }
-                ) {
+
+                ExposedDropdownMenuBox(expanded = expandido, onExpandedChange = { expandido = !expandido }) {
                     OutlinedTextField(
                         value         = tipoSeleccionado,
                         onValueChange = {},
                         readOnly      = true,
-                        label         = { Text("Tipo") },
+                        label         = { Text(t("incidencias.tipo")) },
                         trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
                         modifier      = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded         = expandido,
-                        onDismissRequest = { expandido = false }
-                    ) {
+                    ExposedDropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
                         tipos.forEach { tipo ->
                             DropdownMenuItem(
                                 text    = { Text(tipo) },
@@ -144,13 +146,15 @@ fun NuevaIncidenciaDialog(
                         }
                     }
                 }
+
                 OutlinedTextField(
                     value         = descripcion,
                     onValueChange = { descripcion = it },
-                    label         = { Text("Descripción (opcional)") },
+                    label         = { Text(t("incidencias.descripcion")) },
                     minLines      = 2,
                     modifier      = Modifier.fillMaxWidth()
                 )
+
                 if (!error.isNullOrBlank()) {
                     Text(error, color = Red, fontSize = 12.sp)
                 }
@@ -168,18 +172,20 @@ fun NuevaIncidenciaDialog(
                 if (creando) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Enviar")
+                    Text(t("incidencias.enviar"))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(t("incidencias.cancelar")) }
         }
     )
 }
 
 @Composable
 fun IncidenciaItem(i: IncidenciaResponse) {
+    fun t(key: String) = LanguageManager.t(key)
+
     val (badgeColor, textColor) = when (i.tipo.lowercase()) {
         "gps"     -> RedBg    to Red
         "retraso" -> YellowBg to Yellow
@@ -195,7 +201,7 @@ fun IncidenciaItem(i: IncidenciaResponse) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(
-                modifier              = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
@@ -213,7 +219,7 @@ fun IncidenciaItem(i: IncidenciaResponse) {
                     color = if (i.resuelta) GreenBg else RedBg
                 ) {
                     Text(
-                        if (i.resuelta) "Resuelta" else "Abierta",
+                        if (i.resuelta) t("incidencias.resuelta") else t("incidencias.abierta"),
                         color      = if (i.resuelta) Green else Red,
                         fontSize   = 11.sp,
                         fontWeight = FontWeight.Bold,

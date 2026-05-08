@@ -35,11 +35,11 @@ class SolicitudPollingWorker(
                 if (estadoAnterior != null && estadoAnterior != estadoActual) {
                     val (titulo, mensaje) = when (estadoActual) {
                         "aprobada" -> Pair(
-                            "✅ Solicitud aprobada",
+                            "Solicitud aprobada",
                             "Tu solicitud de ${solicitud.tipo} del ${solicitud.fechaInicio} al ${solicitud.fechaFin} ha sido aprobada."
                         )
                         "rechazada" -> Pair(
-                            "❌ Solicitud rechazada",
+                            "Solicitud rechazada",
                             "Tu solicitud de ${solicitud.tipo} del ${solicitud.fechaInicio} al ${solicitud.fechaFin} ha sido rechazada."
                         )
                         else -> null to null

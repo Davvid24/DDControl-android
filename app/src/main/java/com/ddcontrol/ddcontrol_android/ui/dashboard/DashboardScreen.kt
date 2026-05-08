@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.DiaCalendario
 import com.ddcontrol.ddcontrol_android.ui.theme.*
+import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import com.ddcontrol.ddcontrol_android.util.SessionManager
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -39,8 +42,14 @@ fun DashboardScreen(
     vm: DashboardViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
+    val lang by LanguageManager.lang.collectAsState()
+    val context = LocalContext.current
+
     var vistaCalendario by remember { mutableStateOf(true) }
     var mesActual by remember { mutableStateOf(YearMonth.now()) }
+
+    fun t(key: String) = LanguageManager.t(key)
+    val locale = if (lang == "en") Locale.ENGLISH else Locale("es")
 
     LaunchedEffect(Unit) {
         vm.load(session.getUserId(), session.getEmpresaId())
@@ -55,8 +64,36 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text("D&D Control", fontWeight = FontWeight.Bold) },
                 actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        listOf("es", "en").forEach { code ->
+                            val isActive = lang == code
+                            Surface(
+                                onClick = { LanguageManager.setLang(context, code) },
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isActive) Primary else Color.Transparent,
+                                modifier = Modifier.size(width = 34.dp, height = 28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        code.uppercase(),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isActive) Color.White else TextMuted
+                                    )
+                                }
+                            }
+                        }
+                    }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión", tint = Red)
+                        Icon(
+                            Icons.Default.Logout,
+                            contentDescription = t("dashboard.cerrar_sesion"),
+                            tint = Red
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -66,132 +103,152 @@ fun DashboardScreen(
             )
         }
     ) { padding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.loading,
+            onRefresh = {
+                vm.load(session.getUserId(), session.getEmpresaId())
+                vm.loadCalendario(session.getUserId(), mesActual.year, mesActual.monthValue)
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .background(Surface)
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            DashCard {
-                Column {
-                    Text("Hola,", color = TextMuted, fontSize = 14.sp)
-                    Text(
-                        session.getNombre() ?: "—",
-                        color = Navy,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        state.nombreTurno ?: "Sin turno asignado",
-                        color = Primary,
-                        fontSize = 13.sp
-                    )
-                }
-            }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Surface)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Mi horario", color = Navy, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Row {
-                            TextButton(onClick = { vistaCalendario = true }) {
-                                Text(
-                                    "Mes",
-                                    color = if (vistaCalendario) Primary else TextMuted,
-                                    fontWeight = if (vistaCalendario) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                            TextButton(onClick = { vistaCalendario = false }) {
-                                Text(
-                                    "Semana",
-                                    color = if (!vistaCalendario) Primary else TextMuted,
-                                    fontWeight = if (!vistaCalendario) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { mesActual = mesActual.minusMonths(1) }) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Navy)
-                        }
+                DashCard {
+                    Column {
+                        Text(t("dashboard.hola"), color = TextMuted, fontSize = 14.sp)
                         Text(
-                            mesActual.month.getDisplayName(TextStyle.FULL, Locale("es"))
-                                .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
+                            session.getNombre() ?: "—",
                             color = Navy,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        IconButton(onClick = { mesActual = mesActual.plusMonths(1) }) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Navy)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            state.nombreTurno ?: t("dashboard.sin_turno"),
+                            color = Primary,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                t("dashboard.mi_horario"),
+                                color = Navy,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row {
+                                TextButton(onClick = { vistaCalendario = true }) {
+                                    Text(
+                                        t("dashboard.mes"),
+                                        color = if (vistaCalendario) Primary else TextMuted,
+                                        fontWeight = if (vistaCalendario) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                                TextButton(onClick = { vistaCalendario = false }) {
+                                    Text(
+                                        t("dashboard.semana"),
+                                        color = if (!vistaCalendario) Primary else TextMuted,
+                                        fontWeight = if (!vistaCalendario) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { mesActual = mesActual.minusMonths(1) }) {
+                                Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Navy)
+                            }
+                            Text(
+                                mesActual.month.getDisplayName(TextStyle.FULL, locale)
+                                    .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
+                                color = Navy,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            IconButton(onClick = { mesActual = mesActual.plusMonths(1) }) {
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Navy)
+                            }
+                        }
+
+                        if (state.loadingCalendario) {
+                            Box(
+                                Modifier.fillMaxWidth().height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        } else if (vistaCalendario) {
+                            CalendarioMensual(state.diasCalendario, mesActual, locale)
+                        } else {
+                            CalendarioSemanal(
+                                state.diasCalendario,
+                                state.turnoHoraEntrada,
+                                state.turnoHoraSalida,
+                                locale
+                            )
+                        }
+
+                        if (state.turnoHoraEntrada != null) {
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(color = Surface)
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                LeyendaItem(GreenBg,             Green,           t("dashboard.fichado"))
+                                LeyendaItem(Color(0xFFFFF3E0), Color(0xFFE65100), t("dashboard.pendiente"))
+                                LeyendaItem(Surface,             TextLabel,       t("dashboard.no_laboral"))
+                            }
                         }
                     }
+                }
 
-                    if (state.loadingCalendario) {
-                        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    } else if (vistaCalendario) {
-                        CalendarioMensual(state.diasCalendario, mesActual)
-                    } else {
-                        CalendarioSemanal(state.diasCalendario, state.turnoHoraEntrada, state.turnoHoraSalida)
-                    }
-
-                    if (state.turnoHoraEntrada != null) {
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = Surface)
+                DashCard {
+                    Column {
+                        Text(
+                            t("dashboard.estado_actual"),
+                            color = TextLabel,
+                            fontSize = 11.sp,
+                            letterSpacing = 0.08.sp
+                        )
                         Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            LeyendaItem(GreenBg, Green, "Fichado")
-                            LeyendaItem(Color(0xFFFFF3E0), Color(0xFFE65100), "Pendiente")
-                            LeyendaItem(Surface, TextLabel, "No laboral")
+                        Text(state.estadoFichaje, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        if (state.ultimoFichaje != null) {
+                            Text(state.ultimoFichaje!!, color = TextMuted, fontSize = 13.sp)
                         }
                     }
                 }
-            }
 
-            DashCard {
-                Column {
-                    Text("ESTADO ACTUAL", color = TextLabel, fontSize = 11.sp, letterSpacing = 0.08.sp)
-                    Spacer(Modifier.height(8.dp))
-                    Text(state.estadoFichaje, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    if (state.ultimoFichaje != null) {
-                        Text(state.ultimoFichaje!!, color = TextMuted, fontSize = 13.sp)
-                    }
-                }
-            }
-
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(Modifier.weight(1f), state.fichajesHoy.toString(), "Fichajes hoy", Primary)
-                StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), "Solicitudes", Yellow)
-                StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(), "Incidencias", Red)
-            }
-
-
-
-            if (state.loading) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(Modifier.weight(1f), state.fichajesHoy.toString(),           t("dashboard.fichajes_hoy"), Primary)
+                    StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), t("dashboard.solicitudes"),  Yellow)
+                    StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(),   t("dashboard.incidencias"),  Red)
                 }
             }
         }
@@ -199,8 +256,11 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
-    val diasSemana = listOf("L", "M", "X", "J", "V", "S", "D")
+private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth, locale: Locale) {
+    val diasSemana = if (locale.language == "en")
+        listOf("M", "T", "W", "Th", "F", "Sa", "Su")
+    else
+        listOf("L", "M", "X", "J", "V", "S", "D")
 
     Row(Modifier.fillMaxWidth()) {
         diasSemana.forEach { d ->
@@ -217,13 +277,10 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
 
     Spacer(Modifier.height(4.dp))
 
-    val primerDia = mes.atDay(1)
-    val offsetInicio = (primerDia.dayOfWeek.value - 1)
-    val diasMes = dias
-
+    val offsetInicio = mes.atDay(1).dayOfWeek.value - 1
     val celdas = mutableListOf<DiaCalendario?>()
     repeat(offsetInicio) { celdas.add(null) }
-    celdas.addAll(diasMes)
+    celdas.addAll(dias)
     while (celdas.size % 7 != 0) celdas.add(null)
 
     celdas.chunked(7).forEach { semana ->
@@ -238,7 +295,7 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
                 ) {
                     if (dia != null) {
                         val numDia = dia.fecha.split("-")[2].toIntOrNull() ?: 0
-                        val esHoy = dia.fecha == LocalDate.now().toString()
+                        val esHoy  = dia.fecha == LocalDate.now().toString()
                         val bgColor = when {
                             dia.tieneFichaje -> GreenBg
                             dia.esDiaTurno && !dia.tieneFichaje &&
@@ -252,8 +309,7 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
                                 .clip(CircleShape)
                                 .background(bgColor)
                                 .then(
-                                    if (esHoy) Modifier.border(2.dp, Primary, CircleShape)
-                                    else Modifier
+                                    if (esHoy) Modifier.border(2.dp, Primary, CircleShape) else Modifier
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -264,21 +320,18 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
                                     fontWeight = if (esHoy) FontWeight.Bold else FontWeight.Normal,
                                     color = when {
                                         dia.tieneFichaje -> Green
-                                        dia.esDiaTurno -> Navy
-                                        else -> TextLabel
+                                        dia.esDiaTurno   -> Navy
+                                        else             -> TextLabel
                                     }
                                 )
                                 if (dia.esDiaTurno) {
                                     Box(
-                                        Modifier
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (dia.tieneFichaje) Green
-                                                else if (LocalDate.parse(dia.fecha).isBefore(LocalDate.now()))
-                                                    Color(0xFFE65100)
-                                                else Primary
-                                            )
+                                        Modifier.size(4.dp).clip(CircleShape).background(
+                                            if (dia.tieneFichaje) Green
+                                            else if (LocalDate.parse(dia.fecha).isBefore(LocalDate.now()))
+                                                Color(0xFFE65100)
+                                            else Primary
+                                        )
                                     )
                                 }
                             }
@@ -294,20 +347,22 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth) {
 private fun CalendarioSemanal(
     dias: List<DiaCalendario>,
     horaEntrada: String?,
-    horaSalida: String?
+    horaSalida: String?,
+    locale: Locale
 ) {
-    val hoy = LocalDate.now()
+    val hoy          = LocalDate.now()
     val inicioSemana = hoy.with(DayOfWeek.MONDAY)
-    val semana = (0..6).map { inicioSemana.plusDays(it.toLong()) }
+    val semana       = (0..6).map { inicioSemana.plusDays(it.toLong()) }
+    val diasMap      = dias.associateBy { it.fecha }
+    val isEn         = locale.language == "en"
 
-    val diasMap = dias.associateBy { it.fecha }
+    fun t(key: String) = LanguageManager.t(key)
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         semana.forEach { fecha ->
-            val fechaStr = fecha.toString()
-            val dia = diasMap[fechaStr]
-            val esHoy = fecha == hoy
-            val nombreDia = fecha.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es"))
+            val dia       = diasMap[fecha.toString()]
+            val esHoy     = fecha == hoy
+            val nombreDia = fecha.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
                 .replaceFirstChar { it.uppercase() }
 
             Row(
@@ -316,10 +371,10 @@ private fun CalendarioSemanal(
                     .clip(RoundedCornerShape(8.dp))
                     .background(
                         when {
-                            esHoy -> Color(0xFFEEF6FF)
+                            esHoy                     -> Color(0xFFEEF6FF)
                             dia?.tieneFichaje == true -> GreenBg
-                            dia?.esDiaTurno == true -> Surface
-                            else -> Color.Transparent
+                            dia?.esDiaTurno   == true -> Surface
+                            else                      -> Color.Transparent
                         }
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -352,7 +407,8 @@ private fun CalendarioSemanal(
                         )
                         if (dia.tieneFichaje) {
                             Text(
-                                "Entrada: ${dia.horaEntrada?.take(5) ?: "—"}  Salida: ${dia.horaSalida?.take(5) ?: "—"}",
+                                "${if (isEn) "In" else "Entrada"}: ${dia.horaEntrada?.take(5) ?: "—"}  " +
+                                        "${if (isEn) "Out" else "Salida"}: ${dia.horaSalida?.take(5) ?: "—"}",
                                 fontSize = 11.sp,
                                 color = TextMuted
                             )
@@ -370,22 +426,22 @@ private fun CalendarioSemanal(
                     ) {
                         Text(
                             when {
-                                dia.tieneFichaje -> "✓ Fichado"
-                                fecha.isBefore(hoy) -> "Sin fichar"
-                                fecha == hoy -> "Hoy"
-                                else -> "Pendiente"
+                                dia.tieneFichaje    -> "✓ ${t("dashboard.fichado")}"
+                                fecha.isBefore(hoy) -> t("dashboard.sin_fichar")
+                                fecha == hoy        -> t("dashboard.hoy")
+                                else                -> t("dashboard.pendiente")
                             },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = when {
-                                dia.tieneFichaje -> Green
+                                dia.tieneFichaje    -> Green
                                 fecha.isBefore(hoy) -> Color(0xFFE65100)
-                                else -> Primary
+                                else                -> Primary
                             }
                         )
                     }
                 } else {
-                    Text("No laboral", fontSize = 13.sp, color = TextLabel)
+                    Text(t("dashboard.no_laboral"), fontSize = 13.sp, color = TextLabel)
                 }
             }
         }
@@ -394,8 +450,13 @@ private fun CalendarioSemanal(
 
 @Composable
 private fun LeyendaItem(bg: Color, textColor: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(bg).border(1.dp, textColor, CircleShape))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            Modifier.size(10.dp).clip(CircleShape).background(bg).border(1.dp, textColor, CircleShape)
+        )
         Text(label, fontSize = 11.sp, color = TextMuted)
     }
 }
