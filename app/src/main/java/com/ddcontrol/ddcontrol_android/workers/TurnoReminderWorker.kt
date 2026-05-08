@@ -42,7 +42,7 @@ class TurnoReminderWorker(
                     id = 1001,
                     channelId = NotificationHelper.CHANNEL_TURNO,
                     title = "Tu turno empieza pronto",
-                    message = "Tienes que fichar a las ${horaEntrada.take(5)}. ¡No llegues tarde!"
+                    message = "Tienes que fichar a las ${horaEntrada.take(5)}."
                 )
             }
 

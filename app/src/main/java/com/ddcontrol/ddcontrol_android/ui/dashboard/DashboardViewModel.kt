@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ddcontrol.ddcontrol_android.data.model.DiaCalendario
 import com.ddcontrol.ddcontrol_android.data.repository.*
+import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,7 +17,7 @@ data class DashboardState(
     val nombreTurno:           String? = null,
     val turnoHoraEntrada:      String? = null,
     val turnoHoraSalida:       String? = null,
-    val estadoFichaje:         String  = "Sin registros hoy",
+    val estadoFichaje:         String  = "",
     val ultimoFichaje:         String? = null,
     val fichajesHoy:           Int     = 0,
     val solicitudesPendientes: Int     = 0,
@@ -44,11 +45,11 @@ class DashboardViewModel : ViewModel() {
                     val hoyList = r.data.filter { it.timestampFicha?.startsWith(hoy) == true }
                     val ultimo  = r.data.maxByOrNull { it.timestampFicha ?: "" }
                     val estado  = when (ultimo?.tipo) {
-                        "entrada"      -> "Dentro — entrada registrada"
-                        "salida"       -> "Fuera — salida registrada"
-                        "pausa_inicio" -> "En pausa"
-                        "pausa_fin"    -> "Dentro — pausa finalizada"
-                        else           -> "Sin registros hoy"
+                        "entrada"      -> LanguageManager.t("dashboard.estado_dentro")
+                        "salida"       -> LanguageManager.t("dashboard.estado_fuera")
+                        "pausa_inicio" -> LanguageManager.t("dashboard.estado_pausa")
+                        "pausa_fin"    -> LanguageManager.t("dashboard.estado_pausa_fin")
+                        else           -> LanguageManager.t("dashboard.estado_sin_reg")
                     }
                     _state.value = _state.value.copy(
                         fichajesHoy   = hoyList.size,
@@ -56,7 +57,11 @@ class DashboardViewModel : ViewModel() {
                         ultimoFichaje = ultimo?.timestampFicha?.take(16)?.replace("T", " ")
                     )
                 }
-                else -> {}
+                else -> {
+                    _state.value = _state.value.copy(
+                        estadoFichaje = LanguageManager.t("dashboard.estado_sin_reg")
+                    )
+                }
             }
 
             when (val r = solicitudRepo.getSolicitudes(userId)) {

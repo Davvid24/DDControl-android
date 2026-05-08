@@ -13,6 +13,7 @@ import androidx.work.*
 import com.ddcontrol.ddcontrol_android.data.api.RetrofitClient
 import com.ddcontrol.ddcontrol_android.ui.navigation.AppNavigation
 import com.ddcontrol.ddcontrol_android.ui.theme.DDControlTheme
+import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import com.ddcontrol.ddcontrol_android.util.NotificationHelper
 import com.ddcontrol.ddcontrol_android.util.SessionManager
 import com.ddcontrol.ddcontrol_android.workers.*
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
         val session = SessionManager(this)
         RetrofitClient.setToken(session.getToken())
         NotificationHelper.createChannels(this)
+        LanguageManager.init(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {

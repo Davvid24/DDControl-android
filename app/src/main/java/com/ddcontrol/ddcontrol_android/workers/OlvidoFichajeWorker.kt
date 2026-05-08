@@ -38,7 +38,7 @@ class OlvidoFichajeWorker(
                     entradaInstant, Instant.now()
                 ).toHours()
 
-                if (horasTranscurridas >= 9) {
+                if (horasTranscurridas >= 8) {
                     NotificationHelper.show(
                         applicationContext,
                         id = 1002,

@@ -19,17 +19,18 @@ import com.ddcontrol.ddcontrol_android.ui.fichajes.FichajesScreen
 import com.ddcontrol.ddcontrol_android.ui.incidencias.IncidenciasScreen
 import com.ddcontrol.ddcontrol_android.ui.login.LoginScreen
 import com.ddcontrol.ddcontrol_android.ui.solicitudes.SolicitudesScreen
+import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import com.ddcontrol.ddcontrol_android.util.SessionManager
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    object Dashboard   : Screen("dashboard",   "Inicio",      Icons.Default.Home)
-    object Fichajes    : Screen("fichajes",    "Fichajes",    Icons.Default.AccessTime)
-    object Solicitudes : Screen("solicitudes", "Solicitudes", Icons.Default.Description)
-    object Incidencias : Screen("incidencias", "Incidencias", Icons.Default.Warning)
+sealed class Screen(val route: String, val labelKey: String, val icon: ImageVector) {
+    object Dashboard   : Screen("dashboard",   "nav.inicio",      Icons.Default.Home)
+    object Fichajes    : Screen("fichajes",    "nav.fichajes",    Icons.Default.AccessTime)
+    object Solicitudes : Screen("solicitudes", "nav.solicitudes", Icons.Default.Description)
+    object Incidencias : Screen("incidencias", "nav.incidencias", Icons.Default.Warning)
 }
 
 val bottomScreens = listOf(
@@ -57,26 +58,21 @@ fun AppNavigation(session: SessionManager) {
         }
         composable("home") {
             HomeScaffold(session = session, onLogout = {
-
                 val userId = session.getUserId()
-                val jwt = session.getToken()
+                val jwt    = session.getToken()
 
                 if (userId != -1 && jwt != null) {
                     RetrofitClient.setToken(jwt)
-
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
-                                RetrofitClient.instance.removeDevice(
-                                    mapOf("fcmToken" to fcmToken)
-                                )
+                                RetrofitClient.instance.removeDevice(mapOf("fcmToken" to fcmToken))
                             } catch (_: Exception) {}
                         }
                     }
                 }
 
                 session.clearSession()
-
                 navController.navigate("login") {
                     popUpTo("home") { inclusive = true }
                 }
@@ -90,6 +86,7 @@ fun HomeScaffold(session: SessionManager, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentDest   = navBackStack?.destination
+    val lang          by LanguageManager.lang.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -104,8 +101,8 @@ fun HomeScaffold(session: SessionManager, onLogout: () -> Unit) {
                                 restoreState    = true
                             }
                         },
-                        icon  = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) }
+                        icon  = { Icon(screen.icon, contentDescription = LanguageManager.t(screen.labelKey)) },
+                        label = { Text(LanguageManager.t(screen.labelKey)) }
                     )
                 }
             }
@@ -117,7 +114,7 @@ fun HomeScaffold(session: SessionManager, onLogout: () -> Unit) {
             modifier         = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Dashboard.route)   { DashboardScreen(session, onLogout) }
-            composable(Screen.Fichajes.route) { FichajesScreen(session) }
+            composable(Screen.Fichajes.route)    { FichajesScreen(session) }
             composable(Screen.Solicitudes.route) { SolicitudesScreen(session) }
             composable(Screen.Incidencias.route) { IncidenciasScreen(session) }
         }
