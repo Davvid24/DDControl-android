@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.navigation
 
+import SessionManager
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -20,7 +21,6 @@ import com.ddcontrol.ddcontrol_android.ui.incidencias.IncidenciasScreen
 import com.ddcontrol.ddcontrol_android.ui.login.LoginScreen
 import com.ddcontrol.ddcontrol_android.ui.solicitudes.SolicitudesScreen
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,9 +43,20 @@ val bottomScreens = listOf(
 @Composable
 fun AppNavigation(session: SessionManager) {
     val navController = rememberNavController()
-    val startDest = if (session.isLoggedIn()) "home" else "login"
+    val isLoggedIn by SessionManager.isLoggedInFlow.collectAsState()
 
-    NavHost(navController = navController, startDestination = startDest) {
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            navController.navigate("login") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
+    NavHost(
+        navController    = navController,
+        startDestination = if (session.isLoggedIn()) "home" else "login"
+    ) {
         composable("login") {
             LoginScreen(
                 session = session,
@@ -60,22 +71,16 @@ fun AppNavigation(session: SessionManager) {
             HomeScaffold(session = session, onLogout = {
                 val userId = session.getUserId()
                 val jwt    = session.getToken()
-
                 if (userId != -1 && jwt != null) {
                     RetrofitClient.setToken(jwt)
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
                         CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                RetrofitClient.instance.removeDevice(mapOf("fcmToken" to fcmToken))
-                            } catch (_: Exception) {}
+                            try { RetrofitClient.instance.removeDevice(mapOf("fcmToken" to fcmToken)) }
+                            catch (_: Exception) {}
                         }
                     }
                 }
-
                 session.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
             })
         }
     }

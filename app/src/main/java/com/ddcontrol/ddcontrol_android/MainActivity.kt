@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android
 
+import SessionManager
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -15,7 +16,6 @@ import com.ddcontrol.ddcontrol_android.ui.navigation.AppNavigation
 import com.ddcontrol.ddcontrol_android.ui.theme.DDControlTheme
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
 import com.ddcontrol.ddcontrol_android.util.NotificationHelper
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import com.ddcontrol.ddcontrol_android.workers.*
 import java.util.concurrent.TimeUnit
 
@@ -35,6 +35,13 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.createChannels(this)
         LanguageManager.init(this)
 
+        RetrofitClient.setOnUnauthorized {
+            runOnUiThread {
+                session.clearSession()
+                RetrofitClient.setToken(null)
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
                 ContextCompat.checkSelfPermission(
@@ -45,6 +52,7 @@ class MainActivity : ComponentActivity() {
         } else {
             programarWorkers()
         }
+        session.init()
 
         setContent {
             DDControlTheme {
@@ -76,20 +84,8 @@ class MainActivity : ComponentActivity() {
                 .build()
         )
 
-        workManager.enqueueUniquePeriodicWork(
-            "solicitud_polling",
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<SolicitudPollingWorker>(15, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-        )
 
-        workManager.enqueueUniquePeriodicWork(
-            "turno_polling",
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<TurnoPollingWorker>(30, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-        )
+
+
     }
 }

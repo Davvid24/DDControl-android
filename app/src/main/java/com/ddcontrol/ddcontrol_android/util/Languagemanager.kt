@@ -22,6 +22,7 @@ object LanguageManager {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_LANG, newLang).apply()
         _lang.value = newLang
+
     }
 
     fun t(key: String): String {

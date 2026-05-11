@@ -1,11 +1,11 @@
 package com.ddcontrol.ddcontrol_android.workers
 
+import SessionManager
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ddcontrol.ddcontrol_android.data.api.RetrofitClient
 import com.ddcontrol.ddcontrol_android.util.NotificationHelper
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import java.time.Instant
 import java.time.LocalDate
 

@@ -5,15 +5,13 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
 object RetrofitClient {
 
-    @Volatile
-    private var token: String? = null
+    @Volatile private var token: String? = null
+    @Volatile private var onUnauthorized: (() -> Unit)? = null
 
-    fun setToken(t: String?) {
-        token = t
-    }
+    fun setToken(t: String?) { token = t }
+    fun setOnUnauthorized(callback: () -> Unit) { onUnauthorized = callback }
 
     val instance: ApiService by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -31,7 +29,11 @@ object RetrofitClient {
                 } else {
                     chain.request()
                 }
-                chain.proceed(request)
+                val response = chain.proceed(request)
+                if (response.code == 401 || response.code == 403) {
+                    onUnauthorized?.invoke()
+                }
+                response
             }
             .build()
 

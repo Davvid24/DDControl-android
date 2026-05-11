@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.fichajes
 
+import SessionManager
 import android.Manifest
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,7 +34,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.FichajeResponse
 import com.ddcontrol.ddcontrol_android.ui.theme.*
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -54,7 +54,6 @@ fun FichajesScreen(session: SessionManager) {
             }
         }
     )
-
     val state by vm.state.collectAsState()
     val lang  by LanguageManager.lang.collectAsState()
     fun t(key: String) = LanguageManager.t(key)
@@ -80,6 +79,7 @@ fun FichajesScreen(session: SessionManager) {
         }
     }
 
+
     LaunchedEffect(Unit) {
         vm.cargar(session.getUserId())
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.token)
@@ -103,6 +103,12 @@ fun FichajesScreen(session: SessionManager) {
                 TextButton(onClick = { vm.descartarAviso() }) { Text(t("fichajes.cancelar")) }
             }
         )
+    }
+    LaunchedEffect(state.avisoRadio) {
+        if (state.avisoRadio != null) {
+            android.widget.Toast.makeText(context, state.avisoRadio, android.widget.Toast.LENGTH_LONG).show()
+            vm.limpiarAvisoRadio()
+        }
     }
 
     PullToRefreshBox(

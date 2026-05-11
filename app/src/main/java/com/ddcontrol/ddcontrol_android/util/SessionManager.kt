@@ -1,12 +1,9 @@
-package com.ddcontrol.ddcontrol_android.util
-
 import android.content.Context
-import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class SessionManager(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("ddcontrol_prefs", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("ddcontrol_prefs", Context.MODE_PRIVATE)
 
     companion object {
         const val KEY_TOKEN      = "token"
@@ -14,6 +11,8 @@ class SessionManager(context: Context) {
         const val KEY_EMPRESA_ID = "empresaId"
         const val KEY_NOMBRE     = "nombre"
         const val KEY_ROL        = "rol"
+
+        val isLoggedInFlow = MutableStateFlow(false)
     }
 
     fun saveSession(token: String, userId: Int, empresaId: Int, nombre: String, rol: String) {
@@ -24,6 +23,16 @@ class SessionManager(context: Context) {
             .putString(KEY_NOMBRE,     nombre)
             .putString(KEY_ROL,        rol)
             .apply()
+        isLoggedInFlow.value = true
+    }
+
+    fun clearSession() {
+        prefs.edit().clear().apply()
+        isLoggedInFlow.value = false
+    }
+
+    fun init() {
+        isLoggedInFlow.value = getToken() != null
     }
 
     fun getToken():     String? = prefs.getString(KEY_TOKEN, null)
@@ -31,8 +40,5 @@ class SessionManager(context: Context) {
     fun getEmpresaId(): Int     = prefs.getInt(KEY_EMPRESA_ID, -1)
     fun getNombre():    String? = prefs.getString(KEY_NOMBRE, null)
     fun getRol():       String? = prefs.getString(KEY_ROL, null)
-
-    fun isLoggedIn(): Boolean = getToken() != null
-
-    fun clearSession() = prefs.edit().clear().apply()
+    fun isLoggedIn():   Boolean = getToken() != null
 }

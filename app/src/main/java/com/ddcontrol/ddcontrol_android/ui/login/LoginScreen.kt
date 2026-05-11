@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.login
 
+import SessionManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.ui.theme.*
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 
 @Composable
 fun LoginScreen(
