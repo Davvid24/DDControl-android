@@ -5,16 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.ddcontrol.ddcontrol_android.data.model.IncidenciaRequest
 import com.ddcontrol.ddcontrol_android.data.model.IncidenciaResponse
 import com.ddcontrol.ddcontrol_android.data.repository.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 data class IncidenciasState(
-    val incidencias:    List<IncidenciaResponse> = emptyList(),
-    val loading:        Boolean = false,
-    val error:          String? = null,
-    val creando:        Boolean = false,
-    val mensajeExito:   String? = null
+    val incidencias:  List<IncidenciaResponse> = emptyList(),
+    val loading:      Boolean = false,
+    val error:        String? = null,
+    val creando:      Boolean = false,
+    val mensajeExito: String? = null
 )
 
 class IncidenciasViewModel : ViewModel() {
@@ -23,6 +25,9 @@ class IncidenciasViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(IncidenciasState())
     val state: StateFlow<IncidenciasState> = _state
+
+    private val _exitoEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val exitoEvent: SharedFlow<Unit> = _exitoEvent
 
     fun cargar(userId: Int) {
         viewModelScope.launch {
@@ -39,20 +44,22 @@ class IncidenciasViewModel : ViewModel() {
     fun limpiarMensaje() {
         _state.value = _state.value.copy(mensajeExito = null, error = null)
     }
+
     fun crear(userId: Int, tipo: String, descripcion: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(creando = true, error = null, mensajeExito = null)
             val req = IncidenciaRequest(
-                idUsuario = userId,
-                tipo = tipo,
+                idUsuario   = userId,
+                tipo        = tipo,
                 descripcion = descripcion.ifBlank { null }
             )
             when (val r = repo.createIncidencia(req)) {
                 is Result.Success -> {
                     _state.value = _state.value.copy(
-                        creando       = false,
-                        mensajeExito  = "Incidencia enviada correctamente"
+                        creando      = false,
+                        mensajeExito = "Incidencia enviada correctamente"
                     )
+                    _exitoEvent.emit(Unit)
                     cargar(userId)
                 }
                 is Result.Error -> {

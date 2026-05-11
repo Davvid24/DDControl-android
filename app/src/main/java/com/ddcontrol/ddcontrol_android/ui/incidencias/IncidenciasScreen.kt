@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.incidencias
 
+import SessionManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,8 +21,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.IncidenciaResponse
 import com.ddcontrol.ddcontrol_android.ui.theme.*
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,11 +34,10 @@ fun IncidenciasScreen(
 
     var showDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { vm.cargar(session.getUserId()) }
+    LaunchedEffect("cargar") { vm.cargar(session.getUserId()) }
 
-    LaunchedEffect(state.mensajeExito) {
-        if (state.mensajeExito != null) {
-            delay(2000)
+    LaunchedEffect("exitoEvent") {
+        vm.exitoEvent.collect {
             showDialog = false
             vm.limpiarMensaje()
         }
@@ -201,7 +199,7 @@ fun IncidenciaItem(i: IncidenciaResponse) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {

@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.dashboard
 
+import SessionManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -27,7 +28,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.DiaCalendario
 import com.ddcontrol.ddcontrol_android.ui.theme.*
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth

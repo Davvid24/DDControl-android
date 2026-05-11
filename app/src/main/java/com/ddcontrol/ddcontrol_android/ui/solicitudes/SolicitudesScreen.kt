@@ -1,5 +1,6 @@
 package com.ddcontrol.ddcontrol_android.ui.solicitudes
 
+import SessionManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +21,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ddcontrol.ddcontrol_android.data.model.SolicitudResponse
 import com.ddcontrol.ddcontrol_android.ui.theme.*
 import com.ddcontrol.ddcontrol_android.util.LanguageManager
-import com.ddcontrol.ddcontrol_android.util.SessionManager
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -285,12 +285,12 @@ fun SolicitudItem(s: SolicitudResponse) {
 
     val estadoKey = when (s.estado.lowercase()) {
         "aprobada" -> "solicitudes.aprobada"
-        "denegada" -> "solicitudes.denegada"
+        "rechazada" -> "solicitudes.denegada"
         else       -> "solicitudes.pendiente"
     }
     val (badgeColor, textColor) = when (s.estado.lowercase()) {
         "aprobada" -> GreenBg to Green
-        "denegada" -> RedBg   to Red
+        "rechazada" -> RedBg   to Red
         else       -> YellowBg to Yellow
     }
 

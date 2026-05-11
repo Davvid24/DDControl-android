@@ -21,6 +21,7 @@ data class FichajesState(
     val error: String? = null,
     val aviso: String? = null,
     val mensaje: String? = null,
+    val avisoRadio: String? = null,
     val siguienteTipo: String = "entrada",
     val enPausa: Boolean = false,
     val puedePonerPausa: Boolean = false,
@@ -195,18 +196,10 @@ class FichajesViewModel(private val appContext: Context) : ViewModel() {
         when (val r = fichajeRepo.fichar(req)) {
             is Result.Success -> {
                 val dentroDeRadio = r.data.dentroDeRadio ?: false
-                if (!dentroDeRadio) {
-                    NotificationHelper.show(
-                        context = appContext,
-                        id = 4001,
-                        channelId = NotificationHelper.CHANNEL_FICHAJE,
-                        title = "Fichaje fuera de radio",
-                        message = "Has fichado fuera del radio permitido de tu sede."
-                    )
-                }
                 _state.value = _state.value.copy(
-                    loading = false,
-                    mensaje = "${tipo.replaceFirstChar { it.uppercase() }} registrada correctamente"
+                    loading    = false,
+                    mensaje    = "${tipo.replaceFirstChar { it.uppercase() }} registrada correctamente",
+                    avisoRadio = if (!dentroDeRadio) "Fichaje fuera del radio permitido de tu sede" else null
                 )
                 cargar(userId)
             }
@@ -214,6 +207,9 @@ class FichajesViewModel(private val appContext: Context) : ViewModel() {
                 _state.value = _state.value.copy(loading = false, error = r.message)
             }
         }
+    }
+    fun limpiarAvisoRadio() {
+        _state.value = _state.value.copy(avisoRadio = null)
     }
 
     fun descartarAviso() {
