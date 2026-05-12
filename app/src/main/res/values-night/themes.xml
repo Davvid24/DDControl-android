@@ -1,3 +1,7 @@
 <resources>
     <style name="Theme.DDControlandroid" parent="Theme.AppCompat.DayNight.NoActionBar"/>
+    <style name="Theme.Splash" parent="Theme.DDControlandroid">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>
