@@ -95,33 +95,37 @@ fun HomeScaffold(session: SessionManager, onLogout: () -> Unit) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                bottomScreens.forEach { screen ->
-                    NavigationBarItem(
-                        selected = currentDest?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick  = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState    = true
-                            }
-                        },
-                        icon  = { Icon(screen.icon, contentDescription = LanguageManager.t(screen.labelKey)) },
-                        label = { Text(LanguageManager.t(screen.labelKey)) }
-                    )
+            key(lang) {
+                NavigationBar {
+                    bottomScreens.forEach { screen ->
+                        NavigationBarItem(
+                            selected = currentDest?.hierarchy?.any { it.route == screen.route } == true,
+                            onClick  = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState    = true
+                                }
+                            },
+                            icon  = { Icon(screen.icon, contentDescription = LanguageManager.t(screen.labelKey)) },
+                            label = { Text(LanguageManager.t(screen.labelKey)) }
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController    = navController,
-            startDestination = Screen.Dashboard.route,
-            modifier         = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Dashboard.route)   { DashboardScreen(session, onLogout) }
-            composable(Screen.Fichajes.route)    { FichajesScreen(session) }
-            composable(Screen.Solicitudes.route) { SolicitudesScreen(session) }
-            composable(Screen.Incidencias.route) { IncidenciasScreen(session) }
+        key(lang) {
+            NavHost(
+                navController    = navController,
+                startDestination = Screen.Dashboard.route,
+                modifier         = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Dashboard.route)   { DashboardScreen(session, onLogout) }
+                composable(Screen.Fichajes.route)    { FichajesScreen(session) }
+                composable(Screen.Solicitudes.route) { SolicitudesScreen(session) }
+                composable(Screen.Incidencias.route) { IncidenciasScreen(session) }
+            }
         }
     }
 }
