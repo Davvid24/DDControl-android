@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 class FcmService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
-        Log.d("FCM", "LLEGÓ NOTIFICACIÓN");
         val title = message.notification?.title ?: message.data["title"] ?: return
         val body  = message.notification?.body  ?: message.data["body"]  ?: return
         val type  = message.data["type"] ?: "general"
