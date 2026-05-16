@@ -47,6 +47,9 @@ fun DashboardScreen(
 
     var vistaCalendario by remember { mutableStateOf(true) }
     var mesActual by remember { mutableStateOf(YearMonth.now()) }
+    var semanaActual by remember {
+        mutableStateOf(LocalDate.now().with(DayOfWeek.MONDAY))
+    }
 
     fun t(key: String) = LanguageManager.t(key)
     val locale = if (lang == "en") Locale.ENGLISH else Locale("es")
@@ -57,6 +60,20 @@ fun DashboardScreen(
 
     LaunchedEffect(mesActual) {
         vm.loadCalendario(session.getUserId(), mesActual.year, mesActual.monthValue)
+    }
+
+    val mesDeSemanaNecesario = YearMonth.from(semanaActual)
+    val finSemana = semanaActual.plusDays(6)
+    val mesFinalSemana = YearMonth.from(finSemana)
+
+    LaunchedEffect(semanaActual) {
+        if (!vistaCalendario) {
+            if (mesDeSemanaNecesario != mesActual) {
+                mesActual = mesDeSemanaNecesario
+            } else if (mesFinalSemana != mesActual) {
+                vm.loadCalendario(session.getUserId(), mesFinalSemana.year, mesFinalSemana.monthValue)
+            }
+        }
     }
 
     Scaffold(
@@ -107,7 +124,11 @@ fun DashboardScreen(
             isRefreshing = state.loading,
             onRefresh = {
                 vm.load(session.getUserId(), session.getEmpresaId())
-                vm.loadCalendario(session.getUserId(), mesActual.year, mesActual.monthValue)
+                if (vistaCalendario) {
+                    vm.loadCalendario(session.getUserId(), mesActual.year, mesActual.monthValue)
+                } else {
+                    vm.loadCalendario(session.getUserId(), mesDeSemanaNecesario.year, mesDeSemanaNecesario.monthValue)
+                }
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -158,14 +179,24 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Row {
-                                TextButton(onClick = { vistaCalendario = true }) {
+                                TextButton(onClick = {
+                                    vistaCalendario = true
+                                    mesActual = YearMonth.from(semanaActual)
+                                }) {
                                     Text(
                                         t("dashboard.mes"),
                                         color = if (vistaCalendario) Primary else TextMuted,
                                         fontWeight = if (vistaCalendario) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
-                                TextButton(onClick = { vistaCalendario = false }) {
+                                TextButton(onClick = {
+                                    vistaCalendario = false
+                                    semanaActual = LocalDate.now().with(DayOfWeek.MONDAY)
+                                    val mes = YearMonth.from(semanaActual)
+                                    if (mes != mesActual) {
+                                        mesActual = mes
+                                    }
+                                }) {
                                     Text(
                                         t("dashboard.semana"),
                                         color = if (!vistaCalendario) Primary else TextMuted,
@@ -180,17 +211,63 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { mesActual = mesActual.minusMonths(1) }) {
+                            IconButton(onClick = {
+                                if (vistaCalendario) {
+                                    mesActual = mesActual.minusMonths(1)
+                                } else {
+                                    semanaActual = semanaActual.minusWeeks(1)
+                                    val nuevoMes = YearMonth.from(semanaActual)
+                                    if (nuevoMes != mesActual) {
+                                        mesActual = nuevoMes
+                                    }
+                                }
+                            }) {
                                 Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Navy)
                             }
-                            Text(
-                                mesActual.month.getDisplayName(TextStyle.FULL, locale)
-                                    .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
-                                color = Navy,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
-                            IconButton(onClick = { mesActual = mesActual.plusMonths(1) }) {
+
+                            if (vistaCalendario) {
+                                Text(
+                                    mesActual.month.getDisplayName(TextStyle.FULL, locale)
+                                        .replaceFirstChar { it.uppercase() } + " ${mesActual.year}",
+                                    color = Navy,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                )
+                            } else {
+                                val finSem = semanaActual.plusDays(6)
+                                val labelSemana = if (semanaActual.month == finSem.month) {
+                                    "${semanaActual.dayOfMonth}–${finSem.dayOfMonth} " +
+                                            semanaActual.month.getDisplayName(TextStyle.SHORT, locale)
+                                                .replaceFirstChar { it.uppercase() } +
+                                            " ${semanaActual.year}"
+                                } else {
+                                    "${semanaActual.dayOfMonth} " +
+                                            semanaActual.month.getDisplayName(TextStyle.SHORT, locale)
+                                                .replaceFirstChar { it.uppercase() } +
+                                            " – ${finSem.dayOfMonth} " +
+                                            finSem.month.getDisplayName(TextStyle.SHORT, locale)
+                                                .replaceFirstChar { it.uppercase() } +
+                                            " ${finSem.year}"
+                                }
+                                Text(
+                                    labelSemana,
+                                    color = Navy,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            IconButton(onClick = {
+                                if (vistaCalendario) {
+                                    mesActual = mesActual.plusMonths(1)
+                                } else {
+                                    semanaActual = semanaActual.plusWeeks(1)
+                                    val nuevoMes = YearMonth.from(semanaActual)
+                                    if (nuevoMes != mesActual) {
+                                        mesActual = nuevoMes
+                                    }
+                                }
+                            }) {
                                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Navy)
                             }
                         }
@@ -206,10 +283,11 @@ fun DashboardScreen(
                             CalendarioMensual(state.diasCalendario, mesActual, locale)
                         } else {
                             CalendarioSemanal(
-                                state.diasCalendario,
-                                state.turnoHoraEntrada,
-                                state.turnoHoraSalida,
-                                locale
+                                diasCalendario = state.diasCalendario,
+                                horaEntrada = state.turnoHoraEntrada,
+                                horaSalida = state.turnoHoraSalida,
+                                locale = locale,
+                                semanaInicio = semanaActual
                             )
                         }
 
@@ -218,9 +296,9 @@ fun DashboardScreen(
                             HorizontalDivider(color = Surface)
                             Spacer(Modifier.height(8.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                LeyendaItem(GreenBg,             Green,           t("dashboard.fichado"))
+                                LeyendaItem(GreenBg, Green, t("dashboard.fichado"))
                                 LeyendaItem(Color(0xFFFFF3E0), Color(0xFFE65100), t("dashboard.pendiente"))
-                                LeyendaItem(Surface,             TextLabel,       t("dashboard.no_laboral"))
+                                LeyendaItem(Surface, TextLabel, t("dashboard.no_laboral"))
                             }
                         }
                     }
@@ -246,9 +324,9 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    StatCard(Modifier.weight(1f), state.fichajesHoy.toString(),           t("dashboard.fichajes_hoy"), Primary)
-                    StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), t("dashboard.solicitudes"),  Yellow)
-                    StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(),   t("dashboard.incidencias"),  Red)
+                    StatCard(Modifier.weight(1f), state.fichajesHoy.toString(), t("dashboard.fichajes_hoy"), Primary)
+                    StatCard(Modifier.weight(1f), state.solicitudesPendientes.toString(), t("dashboard.solicitudes"), Yellow)
+                    StatCard(Modifier.weight(1f), state.incidenciasAbiertas.toString(), t("dashboard.incidencias"), Red)
                 }
             }
         }
@@ -295,7 +373,7 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth, locale:
                 ) {
                     if (dia != null) {
                         val numDia = dia.fecha.split("-")[2].toIntOrNull() ?: 0
-                        val esHoy  = dia.fecha == LocalDate.now().toString()
+                        val esHoy = dia.fecha == LocalDate.now().toString()
                         val bgColor = when {
                             dia.tieneFichaje -> GreenBg
                             dia.esDiaTurno && !dia.tieneFichaje &&
@@ -320,8 +398,8 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth, locale:
                                     fontWeight = if (esHoy) FontWeight.Bold else FontWeight.Normal,
                                     color = when {
                                         dia.tieneFichaje -> Green
-                                        dia.esDiaTurno   -> Navy
-                                        else             -> TextLabel
+                                        dia.esDiaTurno -> Navy
+                                        else -> TextLabel
                                     }
                                 )
                                 if (dia.esDiaTurno) {
@@ -345,23 +423,23 @@ private fun CalendarioMensual(dias: List<DiaCalendario>, mes: YearMonth, locale:
 
 @Composable
 private fun CalendarioSemanal(
-    dias: List<DiaCalendario>,
+    diasCalendario: List<DiaCalendario>,
     horaEntrada: String?,
     horaSalida: String?,
-    locale: Locale
+    locale: Locale,
+    semanaInicio: LocalDate
 ) {
-    val hoy          = LocalDate.now()
-    val inicioSemana = hoy.with(DayOfWeek.MONDAY)
-    val semana       = (0..6).map { inicioSemana.plusDays(it.toLong()) }
-    val diasMap      = dias.associateBy { it.fecha }
-    val isEn         = locale.language == "en"
+    val hoy = LocalDate.now()
+    val semana = (0..6).map { semanaInicio.plusDays(it.toLong()) }
+    val diasMap = diasCalendario.associateBy { it.fecha }
+    val isEn = locale.language == "en"
 
     fun t(key: String) = LanguageManager.t(key)
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         semana.forEach { fecha ->
-            val dia       = diasMap[fecha.toString()]
-            val esHoy     = fecha == hoy
+            val dia = diasMap[fecha.toString()]
+            val esHoy = fecha == hoy
             val nombreDia = fecha.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
                 .replaceFirstChar { it.uppercase() }
 
@@ -371,10 +449,10 @@ private fun CalendarioSemanal(
                     .clip(RoundedCornerShape(8.dp))
                     .background(
                         when {
-                            esHoy                     -> Color(0xFFEEF6FF)
+                            esHoy -> Color(0xFFEEF6FF)
                             dia?.tieneFichaje == true -> GreenBg
-                            dia?.esDiaTurno   == true -> Surface
-                            else                      -> Color.Transparent
+                            dia?.esDiaTurno == true -> Surface
+                            else -> Color.Transparent
                         }
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -426,17 +504,17 @@ private fun CalendarioSemanal(
                     ) {
                         Text(
                             when {
-                                dia.tieneFichaje    -> " ${t("dashboard.fichado")}"
+                                dia.tieneFichaje -> " ${t("dashboard.fichado")}"
                                 fecha.isBefore(hoy) -> t("dashboard.sin_fichar")
-                                fecha == hoy        -> t("dashboard.hoy")
-                                else                -> t("dashboard.pendiente")
+                                fecha == hoy -> t("dashboard.hoy")
+                                else -> t("dashboard.pendiente")
                             },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = when {
-                                dia.tieneFichaje    -> Green
+                                dia.tieneFichaje -> Green
                                 fecha.isBefore(hoy) -> Color(0xFFE65100)
-                                else                -> Primary
+                                else -> Primary
                             }
                         )
                     }
