@@ -426,7 +426,7 @@ private fun CalendarioSemanal(
                     ) {
                         Text(
                             when {
-                                dia.tieneFichaje    -> "✓ ${t("dashboard.fichado")}"
+                                dia.tieneFichaje    -> " ${t("dashboard.fichado")}"
                                 fecha.isBefore(hoy) -> t("dashboard.sin_fichar")
                                 fecha == hoy        -> t("dashboard.hoy")
                                 else                -> t("dashboard.pendiente")
