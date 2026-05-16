@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -70,6 +71,7 @@ fun SolicitudesScreen(
                         shape    = RoundedCornerShape(10.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = Primary)
                     ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(t("solicitudes.nueva"), fontWeight = FontWeight.Bold)
                     }
                 }
@@ -317,7 +319,7 @@ fun SolicitudItem(s: SolicitudResponse) {
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "${formatFecha(s.fechaInicio?.toString())} → ${formatFecha(s.fechaFin?.toString())}",
+                "${formatFecha(s.fechaInicio?.toString())} - ${formatFecha(s.fechaFin?.toString())}",
                 color = TextMuted, fontSize = 12.sp
             )
             if (!s.motivo.isNullOrBlank()) {
