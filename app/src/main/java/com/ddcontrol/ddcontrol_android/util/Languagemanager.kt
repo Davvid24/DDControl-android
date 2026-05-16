@@ -79,7 +79,7 @@ object LanguageManager {
         "fichajes.fuera_radio_msg"   to "Has fichado fuera del radio permitido de tu sede.",
 
         "solicitudes.titulo"         to "MIS SOLICITUDES",
-        "solicitudes.nueva"          to "+ Nueva solicitud",
+        "solicitudes.nueva"          to " Nueva solicitud",
         "solicitudes.sin_datos"      to "No tienes solicitudes registradas",
         "solicitudes.tipo"           to "Tipo",
         "solicitudes.fecha_inicio"   to "Fecha inicio",
@@ -170,7 +170,7 @@ object LanguageManager {
         "fichajes.fuera_radio_msg"   to "You clocked in outside your branch's allowed radius.",
 
         "solicitudes.titulo"         to "MY REQUESTS",
-        "solicitudes.nueva"          to "+ New request",
+        "solicitudes.nueva"          to " New request",
         "solicitudes.sin_datos"      to "You have no requests registered",
         "solicitudes.tipo"           to "Type",
         "solicitudes.fecha_inicio"   to "Start date",
