@@ -319,7 +319,7 @@ fun SolicitudItem(s: SolicitudResponse) {
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "${formatFecha(s.fechaInicio?.toString())} → ${formatFecha(s.fechaFin?.toString())}",
+                "${formatFecha(s.fechaInicio?.toString())} - ${formatFecha(s.fechaFin?.toString())}",
                 color = TextMuted, fontSize = 12.sp
             )
             if (!s.motivo.isNullOrBlank()) {
