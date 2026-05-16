@@ -77,6 +77,7 @@ object LanguageManager {
         "fichajes.aviso_no_laboral"  to "Hoy no es tu día de trabajo según tu turno. ¿Seguro que quieres fichar?",
         "fichajes.fuera_radio"       to "Fichaje fuera de radio",
         "fichajes.fuera_radio_msg"   to "Has fichado fuera del radio permitido de tu sede.",
+        "fichajes.obteniendo_gps" to "Obteniendo ubicación…",
 
         "solicitudes.titulo"         to "MIS SOLICITUDES",
         "solicitudes.nueva"          to " Nueva solicitud",
@@ -168,6 +169,7 @@ object LanguageManager {
         "fichajes.aviso_no_laboral"  to "Today is not your working day according to your shift. Are you sure you want to clock in?",
         "fichajes.fuera_radio"       to "Clock-in outside radius",
         "fichajes.fuera_radio_msg"   to "You clocked in outside your branch's allowed radius.",
+        "fichajes.obteniendo_gps" to "Getting location…",
 
         "solicitudes.titulo"         to "MY REQUESTS",
         "solicitudes.nueva"          to " New request",
